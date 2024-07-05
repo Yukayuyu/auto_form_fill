@@ -1,8 +1,8 @@
 packages:
-pip install seleium 
+pip install selenium 
 pip install openai 
 pip install watchdog 
-pip install tkinter 
+pip install tk
 pip install webdriver-manager
 
 get an open-ai API key from here:
