@@ -1,5 +1,5 @@
 packages:
-pip install seleium 
+pip install selenium 
 pip install openai 
 pip install watchdog 
 pip install tkinter 
