@@ -35,8 +35,9 @@ class App:
             self.driver.switch_to.window(self.driver.window_handles[-1])
             html_source = self.driver.page_source
             self.text_area.delete('1.0', tk.END)
-            matched_content = generate_result_list(html_source)
-            outputstr = "\n".join(t[0] + ":" + t[1] for t in matched_content)
+            matched_content, input_string = generate_result_list(html_source)
+            outputstr = input_string + '\n\n'
+            outputstr += "\n".join(t[0] + ":" + t[1] for t in matched_content)
             self.text_area.insert(tk.INSERT, outputstr)
 
             for tp in matched_content:

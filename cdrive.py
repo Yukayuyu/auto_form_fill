@@ -44,21 +44,34 @@ def identify_and_fill_fields(html_code):
     filed_info_str = ",".join([t[0] for t in fields_info])
     # ChatGPTにフィールドのマッチングを依頼
 
-    prompt = f"{filed_info_str}\n\n"
-    prompt += "以上の単語に以下のHTMLに同じ意味を持つ入力欄を特定し、nameを返してください。\n\n"
-    prompt += html_code
+    #prompt = f"{filed_info_str}\n\n"
+    #prompt += "以上の単語に以下のHTMLに同じ意味を持つ入力欄を特定し、nameを返してください。\n\n"
+    prompt = html_code
 
     response = openai.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": """You are a helpful assistant.make sure the Respond to all user queries in the format of key-value pairs
-Respond to all user queries in the format of key-value pairs, where each key is a distinct identifier, and each value is the corresponding response or information. The format should be:
+            {"role": "system", "content": """YYou are a helpful assistant.make sure the Respond to all user queries in the format of key-value pairs
+Respond to all user queries in the format of key-value pairs, where each key is a distinct identifier, and each value is the corresponding response or information. Search from HTML code in the message and find the inputs which have similar meaning with key that provided. The response should be as [key: name of the input element] and all pairs of key-value should be:
 
-key1: value1
-key2: value2
-...
+会社名: name
+会社名（フリガナ）: name
+事業部署名: name
+役職: name
+名前: name
+名前（フリガナ）: name
+名前（ふりがな）: name
+電話番号: name
+メールアドレス: name
+郵便番号: name
+住所: name
+件名: name
+問い合わせ本文: name
 
-Ensure that all responses strictly adhere to this format, with no additional text or explanation outside of these key-value pairs."""},
+
+Ensure that all responses strictly adhere to this format, with no additional text or explanation outside of these key-value pairs.
+If there nothing be found for the key, please response [key: Not Found], and if multiple would be found, please add the number of the names before the key like [(num)key: name1 name2 ....].
+Also make sure 'ふりがな' and 'フリガナ' is different."""},
             {"role": "user", "content": prompt}
         ],
         max_tokens=4000
@@ -95,14 +108,13 @@ Ensure that all responses strictly adhere to this format, with no additional tex
 
 def search_name_by_key(input_string, key):
     data_list = input_string.strip().split('\n')
-    # 入力欄に存在しない要素をlistから削除
-    valid_entries = [entry for entry in data_list if "Not found" not in entry]
-    valid_entries = [entry for entry in data_list if "なし" not in entry]
+    valid_entries = [entry for entry in data_list if "Not Found" not in entry]
+    valid_entries = [entry for entry in valid_entries if "なし" not in entry]
 
     for entry in valid_entries:
         try:
             if entry.split(":")[0].endswith(key):
-                return entry.split(": ")[1]
+                return entry.split(": ")[1].split(" ")
         except:
             return None
 
@@ -112,8 +124,17 @@ def generate_result_list(html_code):
     input_string = identify_and_fill_fields(html_code=html_code)
     result_list = []
     for info in fields_info:
-        k, v = info
+        k, v, df = (info + (None, None))[:3]
         name_key = search_name_by_key(input_string, k)
         if name_key is not None:
-            result_list.append((name_key, v))
-    return result_list
+            if len(name_key) == 1:
+                result_list.append((name_key[0], v))
+            elif len(name_key) > 1 and df is not None:
+                v_list = v.split(df)
+                for i in range(len(name_key)):
+                    result_list.append((name_key[i], v_list[i]))
+            else:
+                pass
+
+
+    return result_list, input_string
